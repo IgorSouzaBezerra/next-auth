@@ -1,38 +1,30 @@
-import { destroyCookie } from "nookies";
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { AuthTokenError } from "../errors/AuthTokenError";
+import { useContext, useEffect } from "react"
+import { AuthContext } from "../contexts/AuthContext"
 import { setupAPIClient } from "../services/api";
+import { api } from "../services/apiClient";
+import { withSSRAuth } from "../utils/withSSRAuth"
+
 import styled from "../styles/Home.module.css";
-import { withSSRAuth } from "../utils/withSSRAuth";
 
 export default function Dashboard() {
-  const { user } = useContext(AuthContext);
+  const { user, signOut } = useContext(AuthContext)
+
+  useEffect(() => {
+    api.get('/me')
+      .then(response => console.log(response))
+  }, []);
 
   return (
     <div className={styled.container}>
       <h1>Dashboard: {user?.email}</h1>
+      <button onClick={signOut}>SignOut</button>
     </div>
-  )
-}
+  );
+};
 
 export const getServerSideProps = withSSRAuth(async (ctx) => {
   const apiClient = setupAPIClient(ctx);
-
-  try {
-    const response = await apiClient.get('/me');
-    console.log('try')
-  } catch (err) {
-    destroyCookie(ctx, 'nextauth.token');
-    destroyCookie(ctx, 'nextauth.refreshToken');
-    return {
-      redirect: {
-        destination: '/',
-        permanent: false,
-      }
-    }
-  }
-
+  const response = await apiClient.get('/me');
   return {
     props: {}
   }
